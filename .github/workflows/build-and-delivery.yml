@@ -1,6 +1,7 @@
 name: Build and Delivery
 
 on:
+  workflow_dispatch:
   push:
     branches: ['main']
 
@@ -10,15 +11,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Debug files
+        with:
+          fetch-depth: 0
+          
+      - name: SUPER DEBUG - find everything
         run: |
-          echo "=== Current directory ==="
+          echo "=== PWD ==="
           pwd
-          echo "=== Files in root ==="
+          echo "=== LS -LA FULL ==="
           ls -la
-          echo "=== requirements.txt content ==="
-          cat requirements.txt || echo "requirements.txt NOT FOUND"
+          echo "=== FIND requirements.txt ==="
+          find . -name "requirements.txt"
+          echo "=== CAT requirements.txt ==="
+          cat requirements.txt || echo "NOT FOUND"
+          echo "=== CHECK .github/workflows/ ==="
+          ls -la .github/workflows/ || echo "No workflows folder"
+          echo "=== GIT STATUS ==="
+          git status
           
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -29,5 +38,6 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
+          context: .
           push: true
           tags: ${{ vars.DOCKERHUB_USERNAME }}/my-app:latest
