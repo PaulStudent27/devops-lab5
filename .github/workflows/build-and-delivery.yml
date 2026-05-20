@@ -1,24 +1,32 @@
 name: Build and Delivery
 
 on:
-  workflow_dispatch:
   push:
     branches: ['main']
-  workflow_run:
-    workflows: ["Test Python app"]
-    branches: ['main']
-    types:
-      - completed
 
 jobs:
   cd:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: List files for debugging
+      run: ls -la
       
+    - name: Check requirements.txt exists
+      run: |
+        if [ -f requirements.txt ]; then
+          echo "requirements.txt found"
+          cat requirements.txt
+        else
+          echo "requirements.txt NOT found"
+          exit 1
+        fi
+        
     - name: Log in to Docker Hub
       uses: docker/login-action@v3
       with:
@@ -28,5 +36,6 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v6
       with:
+        context: .
         push: true
         tags: ${{ vars.DOCKERHUB_USERNAME }}/my-app:latest
